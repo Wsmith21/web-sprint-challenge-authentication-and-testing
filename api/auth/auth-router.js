@@ -17,11 +17,11 @@ router.post('/register', async (req, res) => {
 
   try {
     // Check if the username already exists in the users array
-    const existingUser = users.find(user => user.username === username);
+    // const existingUser = users.find(user => user.username === username);
 
-    if (existingUser) {
-      return res.status(400).json({ message: 'Username taken' }); // Existing user, status 400
-    }
+    // if (existingUser) {
+    //   return res.status(400).json({ message: 'Username taken' }); // Existing user, status 400
+    // }
 
     const hashedPassword = await bcrypt.hash(password, 10);
 
