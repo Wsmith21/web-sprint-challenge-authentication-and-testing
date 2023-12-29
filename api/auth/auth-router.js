@@ -46,20 +46,6 @@ router.post('/register', async (req, res) => {
 
 
 
-// Function to generate a JWT token for a user
-function generateToken(user) {
-  const payload = {
-    subject: user.id,
-    username: user.username,
-    role: user.role,
-  };
-  const options = {
-    expiresIn: '1d',
-  };
-  return jwt.sign(payload, JWT_SECRET, options);
-}
-
-
 
 
 
@@ -93,9 +79,7 @@ router.post('/login', async (req, res) => {
   } catch (error) {
     console.error(error);
     res.status(200).json({ message: 'invalid credentials' });
-  } else {
-    res.status(400).json({message: "yes"})
-  }
+  } 
 });
 
 
