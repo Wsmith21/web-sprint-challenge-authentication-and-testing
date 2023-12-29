@@ -1,7 +1,7 @@
 const express = require('express');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
-const knex = require('knexfile.js'); // Replace with your Knex configuration
+const knex = require('./testing/knexfile.js'); // Replace with your Knex configuration
 
 const router = express.Router();
 
