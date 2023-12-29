@@ -1,59 +1,71 @@
-const router = require('express').Router();
+const express = require('express');
+const bcrypt = require('bcryptjs');
+const jwt = require('jsonwebtoken');
+const knex = require('/Users/walynsmith/web-sprint-challenge-authentication-and-testing/knexfile.js'); // Replace with your Knex configuration
 
-router.post('/register', (req, res) => {
-  res.end('implement register, please!');
-  /*
-    IMPLEMENT
-    You are welcome to build additional middlewares to help with the endpoint's functionality.
-    DO NOT EXCEED 2^8 ROUNDS OF HASHING!
+const router = express.Router();
 
-    1- In order to register a new account the client must provide `username` and `password`:
-      {
-        "username": "Captain Marvel", // must not exist already in the `users` table
-        "password": "foobar"          // needs to be hashed before it's saved
-      }
+// POST /api/auth/register
+router.post('/register', async (req, res) => {
+  try {
+    const { username, password } = req.body;
 
-    2- On SUCCESSFUL registration,
-      the response body should have `id`, `username` and `password`:
-      {
-        "id": 1,
-        "username": "Captain Marvel",
-        "password": "2a$08$jG.wIGR2S4hxuyWNcBf9MuoC4y0dNy7qC/LbmtuFBSdIhWks2LhpG"
-      }
+    // Check if username or password is missing
+    if (!username || !password) {
+      return res.status(400).json({ message: 'username and password required' });
+    }
 
-    3- On FAILED registration due to `username` or `password` missing from the request body,
-      the response body should include a string exactly as follows: "username and password required".
+    // Check if username already exists in the database
+    const existingUser = await knex('users').where({ username }).first();
+    if (existingUser) {
+      return res.status(400).json({ message: 'username taken' });
+    }
 
-    4- On FAILED registration due to the `username` being taken,
-      the response body should include a string exactly as follows: "username taken".
-  */
+    // Hash the password before saving it to the database
+    const hashedPassword = await bcrypt.hash(password, 8); // Maximum 2^8 rounds of hashing
+
+    // Insert the new user into the database
+    const newUser = await knex('users').insert({ username, password: hashedPassword });
+
+    res.status(201).json({ id: newUser[0], username, password: hashedPassword });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: 'Internal Server Error' });
+  }
 });
 
-router.post('/login', (req, res) => {
-  res.end('implement login, please!');
-  /*
-    IMPLEMENT
-    You are welcome to build additional middlewares to help with the endpoint's functionality.
+module.exports = router;
 
-    1- In order to log into an existing account the client must provide `username` and `password`:
-      {
-        "username": "Captain Marvel",
-        "password": "foobar"
-      }
 
-    2- On SUCCESSFUL login,
-      the response body should have `message` and `token`:
-      {
-        "message": "welcome, Captain Marvel",
-        "token": "eyJhbGciOiJIUzI ... ETC ... vUPjZYDSa46Nwz8"
-      }
+router.post('/login', async (req, res) => {
+  try {
+    const { username, password } = req.body;
 
-    3- On FAILED login due to `username` or `password` missing from the request body,
-      the response body should include a string exactly as follows: "username and password required".
+    // Check if username or password is missing
+    if (!username || !password) {
+      return res.status(400).json({ message: 'username and password required' });
+    }
 
-    4- On FAILED login due to `username` not existing in the db, or `password` being incorrect,
-      the response body should include a string exactly as follows: "invalid credentials".
-  */
+    // Check if the username exists in the database
+    const user = await knex('users').where({ username }).first();
+    if (!user) {
+      return res.status(401).json({ message: 'invalid credentials' });
+    }
+
+    // Compare the provided password with the hashed password in the database
+    const passwordMatch = await bcrypt.compare(password, user.password);
+    if (!passwordMatch) {
+      return res.status(401).json({ message: 'invalid credentials' });
+    }
+
+    // If the username and password are correct, generate a JWT token
+    const token = jwt.sign({ username: user.username }, JWT_SECRET, { expiresIn: '1h' });
+
+    res.status(200).json({ message: `welcome, ${user.username}`, token });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: 'Internal Server Error' });
+  }
 });
 
 module.exports = router;
