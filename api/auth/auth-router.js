@@ -35,12 +35,18 @@ router.post('/register', async (req, res) => {
     // Push the new user to the users array (in a real app, save to a database)
     users.push(newUser);
 
-    // Return user details upon successful registration
-    return res.status(201).json({ id: users.length, username: newUser.username });
+    const userId = users.length - 1;
+
+    // Return user details upon successful registration with ID and username
+    return res.status(201).json({ id: userId, username: newUser.username });
   } catch (error) {
     return res.status(500).json({ message: 'Error creating user' });
   }
 });
+
+
+
+
 
 // Endpoint for user login
 router.post('/login', async (req, res) => {
