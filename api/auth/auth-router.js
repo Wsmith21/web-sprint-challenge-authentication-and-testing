@@ -23,7 +23,7 @@ router.post('/register', async (req, res) => {
     //   return res.status(400).json({ message: 'Username taken' }); // Existing user, status 400
     // }
 
-    const hashedPassword = await bcrypt.hash(password, 10);
+    const hashedPassword = bcrypt.hashSync(password, 8);
 
     // Create a new user object
     const newUser = {
