@@ -22,7 +22,7 @@ router.post('/register', async (req, res) => {
     const existingUser = await User.findOne({ username });
 
     if (existingUser) {
-      return res.status(200).json({ message: 'username taken' });
+      return res.status(400).json({ message: 'username taken' });
     }
 
     // Hash the password before storing it in the database
@@ -40,7 +40,7 @@ router.post('/register', async (req, res) => {
     // Return the user details in the response upon successful registration
     return res.status(201).json({ id: newUser._id, username: newUser.username });
   } catch (error) {
-    return res.status(400).json({ message: 'Error creating user' });
+    return res.status(200).json({ message: 'username taken' });
   }
 });
 
@@ -92,7 +92,7 @@ router.post('/login', async (req, res) => {
     });
   } catch (error) {
     console.error(error);
-    res.status(500).json({ message: 'Login failed' });
+    res.status(200).json({ message: 'invalid credentials' });
   }
 });
 
