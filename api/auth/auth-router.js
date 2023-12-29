@@ -4,9 +4,14 @@ const jwt = require('jsonwebtoken');
 
 const router = express.Router();
 
-// Initialize a counter for assigning user IDs
-let userIdCounter = 1;
-const users = [];
+const knex = require('knex')({
+  client: 'sqlite3', // Replace with your actual DB client (MySQL, PostgreSQL, etc.)
+  connection: {
+    filename: process.env.DB_FILENAME || 'data/dbConfig.js',
+  },
+});
+
+const MAX_BCRYPT_ROUNDS = 8;
 
 // Endpoint for user registration
 router.post('/register', async (req, res) => {
@@ -17,35 +22,31 @@ router.post('/register', async (req, res) => {
   }
 
   try {
-    // Check if the username already exists in the users array
-    const existingUser = users.find(user => user.username === username);
+    // Check if the username already exists in the users table
+    const existingUser = await knex('users').where({ username }).first();
 
     if (existingUser) {
       return res.status(400).json({ message: 'Username already taken' });
     }
 
-    // Hash the password before storing it (in a real app, store in a database hashed)
-    const hashedPassword = await bcrypt.hash(password, 10);
+    // Hash the password before storing it
+    const saltRounds = Math.min(MAX_BCRYPT_ROUNDS, parseInt(process.env.BCRYPT_ROUNDS, 10) || MAX_BCRYPT_ROUNDS);
+    const hashedPassword = await bcrypt.hash(password, saltRounds);
 
-    // Create a new user object to save (in a real app, save to a database)
-    const newUser = {
-      id: userIdCounter, // Assign a unique ID
+    // Insert the new user into the users table
+    const [newUserId] = await knex('users').insert({
       username,
       password: hashedPassword,
-    };
+    });
 
-    // Increment the user ID counter for the next user
-    userIdCounter++;
-
-    // Push the new user to the users array (simulating database insertion)
-    users.push(newUser);
-
-    // Return user details upon successful registration with ID and username
-    return res.status(201).json({ id: newUser.id, username: newUser.username });
+    // Return user details upon successful registration
+    return res.status(201).json({ id: newUserId, username });
   } catch (error) {
+    console.error(error);
     return res.status(500).json({ message: 'Error creating user' });
   }
 });
+
 
 
 
