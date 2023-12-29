@@ -1,8 +1,8 @@
-cconst bcrypt = require('bcryptjs');
+const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const express = require('express');
 const router = express.Router();
-const knex = require('knex')(require('./knexfile'));
+const knex = require('knex')(require('./knexfile.js'));
 
 router.post('/register', async (req, res) => {
   const { username, password } = req.body;
