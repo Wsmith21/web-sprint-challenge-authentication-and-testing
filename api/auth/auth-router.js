@@ -9,8 +9,6 @@ let userIdCounter = 1;
 const users = [];
 
 // Endpoint for user registration
-// Endpoint for user registration
-// Endpoint for user registration
 router.post('/register', async (req, res) => {
   const { username, password } = req.body;
 
@@ -19,7 +17,7 @@ router.post('/register', async (req, res) => {
   }
 
   try {
-    const hashedPassword = await bcrypt.hash(password, 10);
+    let hashedPassword = '';
 
     // Check if the username already exists in the users array
     const existingUser = users.find(user => user.username === username);
@@ -27,6 +25,8 @@ router.post('/register', async (req, res) => {
     if (existingUser) {
       return res.status(400).json({ message: 'Username taken' });
     }
+
+    hashedPassword = await bcrypt.hash(password, 10);
 
     // Create a new user object to save (in a real app, save to a database)
     const newUser = {
