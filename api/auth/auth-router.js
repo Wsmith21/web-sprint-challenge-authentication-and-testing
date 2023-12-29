@@ -1,13 +1,11 @@
 const express = require('express');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
+const knex = require('knex')(require('./knexfile.js'));
 
 const router = express.Router();
 
 // Initialize a counter for assigning user IDs
-let userIdCounter = 1;
-const users = [];
-
 router.post('/register', async (req, res) => {
   const { username, password } = req.body;
 
@@ -16,36 +14,30 @@ router.post('/register', async (req, res) => {
   }
 
   try {
-    // Check if the username already exists in the users array
-    // const existingUser = users.find(user => user.username === username);
+    const hashedPassword = await bcrypt.hash(password, 8);
 
-    // if (existingUser) {
-    //   return res.status(400).json({ message: 'Username taken' }); // Existing user, status 400
-    // }
+    // Check if the username already exists in the database
+    const existingUser = await knex('users').where({ username }).first();
+    if (existingUser) {
+      return res.status(400).json({ message: 'Username already taken' });
+    }
 
-    const hashedPassword = bcrypt.hashSync(password, 8);
-
-    // Create a new user object
-    const newUser = {
-      id: userIdCounter, // Assign a unique ID (you might use a better way to generate IDs in a real app)
+    // Insert the new user into the 'users' table
+    const [userId] = await knex('users').insert({
       username,
       password: hashedPassword,
-    };
+    });
 
-    // Increment the user ID counter for the next user
-    userIdCounter++;
+    // Fetch the newly inserted user from the database
+    const newUser = await knex('users').where('id', userId).first();
 
-    // Simulate adding the user to a database (users array)
-    users.push(newUser);
-
-    // Return user details upon successful registration with ID and username
-    return res.status(400 || 200).json({
+    return res.status(200).json({
       id: newUser.id,
       username: newUser.username,
-      password: hashedPassword, // Include hashed password in the response (for testing purposes)
+      password: newUser.password, // Include hashed password in the response (for testing purposes)
     });
   } catch (error) {
-    return res.status(200).json({ message: 'Error creating user' });
+    return res.status(500).json({ message: 'Error creating user' });
   }
 });
 
@@ -57,22 +49,21 @@ router.post('/register', async (req, res) => {
 
 
 
-// Endpoint for user login
 router.post('/login', async (req, res) => {
   const { username, password } = req.body;
 
   if (!username || !password) {
-    return res.status(400).json({ message: 'username and password required' });
-  }
-
-  // Find user by username in the users array
-  const user = users.find(user => user.username === username);
-
-  if (!user) {
-    return res.status(400).json({ message: 'Invalid credentials' });
+    return res.status(400).json({ message: 'Username and password are required' });
   }
 
   try {
+    // Find user by username in the database
+    const user = await knex('users').where({ username }).first();
+
+    if (!user) {
+      return res.status(400).json({ message: 'Invalid credentials' });
+    }
+
     // Compare provided password with user's hashed password
     const isMatch = await bcrypt.compare(password, user.password);
 
