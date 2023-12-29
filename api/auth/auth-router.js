@@ -37,7 +37,7 @@ router.post('/register', async (req, res) => {
       password: newUser.password, // Include hashed password in the response (for testing purposes)
     });
   } catch (error) {
-    return res.status(200).json({ message: 'Error creating user' });
+    return res.status(500).json({ message: 'Error creating user' });
   }
 });
 
@@ -80,7 +80,7 @@ router.post('/login', async (req, res) => {
       token: token,
     });
   } catch (error) {
-    res.status(500).json({ message: 'Login failed' });
+    res.status(500).json({ message: 'Invalid credentials' });
   }
 });
 
