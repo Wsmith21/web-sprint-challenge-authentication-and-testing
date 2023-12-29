@@ -1,78 +1,59 @@
-const express = require('express');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
-const knex = require('knex')
+const router = require('express').Router();
+const User = require('api/users/users-module.js');
+const { BCRYPT_ROUNDS, JWT_SECRET } = require('./github/config');
 
-const router = express.Router();
-
-
-// Endpoint for user registration
-router.post('/register', async (req, res) => {
-  const { username, password } = req.body;
-
-  if (!username || !password) {
-    return res.status(400).json({ message: 'Username and password are required' });
-  }
+router.post('/register', async (req, res, next) => {
+  let user = req.body;
 
   try {
-    // Check if the username already exists in the database
-    const existingUser = await knex('users').where({ username }).first();
+    // bcrypting the password before saving
+    const hash = await bcrypt.hash(user.password, BCRYPT_ROUNDS);
 
-    if (existingUser) {
-      return res.status(400).json({ message: 'username taken' });
-    }
+    // never save the plain text password in the db
+    user.password = hash;
 
-    // Hash the password before storing it in the database
-    const hashedPassword = await bcrypt.hash(password, 10);
+    const savedUser = await User.add(user);
 
-    // Create a new user record in the 'users' table
-    await knex('users').insert({
-      username,
-      password: hashedPassword,
-    });
-
-    return res.status(201).json({ message: 'User registered successfully' });
+    res.status(201).json({ message: `Great to have you, ${savedUser.username}` });
   } catch (error) {
-    console.error(error);
-    return res.status(500).json({ message: 'Error creating user' });
+    next(error); // Custom error handling middleware in server.js will catch this
   }
 });
 
-
-// Endpoint for user login
-router.post('/login', async (req, res) => {
-  const { username, password } = req.body;
-
-  if (!username || !password) {
-    return res.status(400).json({ message: 'username and password required' });
-  }
-
-  // Find user by username in the users array
-  const user = users.find(user => user.username === username);
-
-  if (!user) {
-    return res.status(400).json({ message: 'Invalid credentials' });
-  }
+router.post('/login', async (req, res, next) => {
+  let { username, password } = req.body;
 
   try {
-    // Compare provided password with user's hashed password
-    const isMatch = await bcrypt.compare(password, user.password);
+    const [user] = await User.findBy({ username });
 
-    if (!isMatch) {
-      return res.status(400).json({ message: 'Invalid credentials' });
+    if (user && bcrypt.compareSync(password, user.password)) {
+      const token = generateToken(user);
+
+      // Return the token in the response
+      res.status(200).json({
+        message: `Welcome back ${user.username}, here's your token...`,
+        token, // attach the token as part of the response
+      });
+    } else {
+      next({ status: 401, message: 'Invalid Credentials' });
     }
-
-    // Create a JWT token
-    const token = jwt.sign({ username: user.username }, 'your_secret_key', { expiresIn: '1h' });
-
-    // Respond with welcome message and token upon successful login
-    res.json({
-      message: `Welcome, ${user.username}`,
-      token: token,
-    });
   } catch (error) {
-    res.status(500).json({ message: 'Login failed' });
+    next(error);
   }
 });
+
+function generateToken(user) {
+  const payload = {
+    subject: user.id,
+    username: user.username,
+    role: user.role,
+  };
+  const options = {
+    expiresIn: '1d',
+  };
+  return jwt.sign(payload, JWT_SECRET, options);
+}
 
 module.exports = router;
