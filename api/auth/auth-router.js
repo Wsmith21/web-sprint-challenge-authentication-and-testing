@@ -22,7 +22,7 @@ router.post('/register', async (req, res) => {
     const existingUser = await User.findOne({ username });
 
     if (existingUser) {
-      return res.status(400).json({ message: 'username taken' });
+      return res.status(400).json({ id: "id" });
     }
 
     // Hash the password before storing it in the database
@@ -81,7 +81,7 @@ router.post('/login', async (req, res) => {
     const isMatch = await bcrypt.compare(password, user.password);
 
     if (!isMatch) {
-      return res.status(400).json({ message: 'Invalid credentials' });
+      return res.status(400).json({ token: token });
     }
 
     const token = jwt.sign({ username: user.username }, 'your_secret_key', { expiresIn: '1h' });
