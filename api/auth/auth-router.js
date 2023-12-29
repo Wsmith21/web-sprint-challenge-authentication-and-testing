@@ -23,7 +23,7 @@ router.post('/register', async (req, res) => {
     const existingUser = users.find(user => user.username === username);
 
     if (existingUser) {
-      return res.status(400).json({ message: 'Username taken' });
+      return res.status(200).json({ message: 'Username taken' });
     }
 
     hashedPassword = await bcrypt.hash(password, 10);
