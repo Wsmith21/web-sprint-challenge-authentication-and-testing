@@ -8,7 +8,6 @@ const router = express.Router();
 let userIdCounter = 1;
 const users = [];
 
-// Endpoint for user registration
 router.post('/register', async (req, res) => {
   const { username, password } = req.body;
 
@@ -17,20 +16,18 @@ router.post('/register', async (req, res) => {
   }
 
   try {
-    let hashedPassword = '';
-
     // Check if the username already exists in the users array
     const existingUser = users.find(user => user.username === username);
 
     if (existingUser) {
-      return res.status(200).json({ message: 'Username taken' });
+      return res.status(400).json({ message: 'Username taken' });
     }
 
-    hashedPassword = await bcrypt.hash(password, 10);
+    const hashedPassword = await bcrypt.hash(password, 10);
 
-    // Create a new user object to save (in a real app, save to a database)
+    // Create a new user object
     const newUser = {
-      id: userIdCounter, // Assign a unique ID
+      id: userIdCounter, // Assign a unique ID (you might use a better way to generate IDs in a real app)
       username,
       password: hashedPassword,
     };
@@ -38,19 +35,20 @@ router.post('/register', async (req, res) => {
     // Increment the user ID counter for the next user
     userIdCounter++;
 
-    // Push the new user to the users array (simulating database insertion)
+    // Simulate adding the user to a database (users array)
     users.push(newUser);
 
-    // Return user details upon successful registration with ID, username, and hashed password
-    return res.status(400).json({
+    // Return user details upon successful registration with ID and username
+    return res.status(201).json({
       id: newUser.id,
       username: newUser.username,
-      password: hashedPassword, // Include hashed password in the response
+      password: hashedPassword, // Include hashed password in the response (for testing purposes)
     });
   } catch (error) {
     return res.status(500).json({ message: 'Error creating user' });
   }
 });
+
 
 
 
