@@ -20,7 +20,7 @@ router.post('/register', async (req, res) => {
     const existingUser = users.find(user => user.username === username);
 
     if (existingUser) {
-      return res.status(400).json({ message: 'Username taken' });
+      return res.status(400).json({ message: 'Username taken' }); // Existing user, status 400
     }
 
     const hashedPassword = await bcrypt.hash(password, 10);
@@ -48,6 +48,7 @@ router.post('/register', async (req, res) => {
     return res.status(500).json({ message: 'Error creating user' });
   }
 });
+
 
 
 
