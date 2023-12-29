@@ -1,7 +1,7 @@
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const router = require('express').Router();
-const User = require('api/users/users-module.js');
+const User = require('./users/users-module.js');
 const { BCRYPT_ROUNDS, JWT_SECRET } = require('./github/config');
 
 router.post('/register', async (req, res, next) => {
