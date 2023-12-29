@@ -1,59 +1,81 @@
+const express = require('express');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
-const router = require('express').Router();
-const User = require('..users-module.js');
-const { BCRYPT_ROUNDS, JWT_SECRET } = require('config');
 
-router.post('/register', async (req, res, next) => {
-  let user = req.body;
+const router = express.Router();
 
-  try {
-    // bcrypting the password before saving
-    const hash = await bcrypt.hash(user.password, BCRYPT_ROUNDS);
+// Placeholder for users (static array acting as persistent storage)
+const users = [];
 
-    // never save the plain text password in the db
-    user.password = hash;
+// Endpoint for user registration
+router.post('/register', async (req, res) => {
+  const { username, password } = req.body;
 
-    const savedUser = await User.add(user);
-
-    res.status(201).json({ message: `Great to have you, ${savedUser.username}` });
-  } catch (error) {
-    next(error); // Custom error handling middleware in server.js will catch this
+  if (!username || !password) {
+    return res.status(400).json({ message: 'Username and password are required' });
   }
-});
-
-router.post('/login', async (req, res, next) => {
-  let { username, password } = req.body;
 
   try {
-    const [user] = await User.findBy({ username });
+    // Check if the username already exists in the users array
+    const existingUser = users.find(user => user.username === username);
 
-    if (user && bcrypt.compareSync(password, user.password)) {
-      const token = generateToken(user);
-
-      // Return the token in the response
-      res.status(200).json({
-        message: `Welcome back ${user.username}, here's your token...`,
-        token, // attach the token as part of the response
-      });
-    } else {
-      next({ status: 401, message: 'Invalid Credentials' });
+    if (existingUser) {
+      return res.status(400).json({ message: 'username taken' });
     }
+
+    // Hash the password before storing it (in a real app, store in a database hashed)
+    const hashedPassword = await bcrypt.hash(password, 10);
+
+    // Create a new user object to save (in a real app, save to a database)
+    const newUser = {
+      username,
+      password: hashedPassword,
+    };
+
+    // Push the new user to the users array (in a real app, save to a database)
+    users.push(newUser);
+
+    // Return user details upon successful registration
+    return res.status(201).json({ id: users.length, username: newUser.username });
   } catch (error) {
-    next(error);
+    return res.status(500).json({ message: 'Error creating user' });
   }
 });
 
-function generateToken(user) {
-  const payload = {
-    subject: user.id,
-    username: user.username,
-    role: user.role,
-  };
-  const options = {
-    expiresIn: '1d',
-  };
-  return jwt.sign(payload, JWT_SECRET, options);
-}
+// Endpoint for user login
+router.post('/login', async (req, res) => {
+  const { username, password } = req.body;
+
+  if (!username || !password) {
+    return res.status(400).json({ message: 'username and password required' });
+  }
+
+  // Find user by username in the users array
+  const user = users.find(user => user.username === username);
+
+  if (!user) {
+    return res.status(400).json({ message: 'Invalid credentials' });
+  }
+
+  try {
+    // Compare provided password with user's hashed password
+    const isMatch = await bcrypt.compare(password, user.password);
+
+    if (!isMatch) {
+      return res.status(400).json({ message: 'Invalid credentials' });
+    }
+
+    // Create a JWT token
+    const token = jwt.sign({ username: user.username }, 'your_secret_key', { expiresIn: '1h' });
+
+    // Respond with welcome message and token upon successful login
+    res.json({
+      message: `Welcome, ${user.username}`,
+      token: token,
+    });
+  } catch (error) {
+    res.status(500).json({ message: 'Login failed' });
+  }
+});
 
 module.exports = router;
