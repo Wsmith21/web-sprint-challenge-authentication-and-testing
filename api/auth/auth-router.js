@@ -22,7 +22,7 @@ router.post('/register', async (req, res) => {
     const existingUser = await User.findOne({ username });
 
     if (existingUser) {
-      return res.status(400).json({ message: 'Username already exists' });
+      return res.status(200).json({ message: 'username taken' });
     }
 
     // Hash the password before storing it in the database
@@ -71,18 +71,19 @@ router.post('/login', async (req, res) => {
     return res.status(400).json({ message: 'Username and password required' });
   }
 
-  const user = users.find(user => user.username === username);
-  if (!user) {
-    return res.status(400).json({ message: 'Invalid credentials' });
-  }
-
   try {
+    const user = await userService.findByUsername(username);
+
+    if (!user) {
+      return res.status(400).json({ message: 'Invalid credentials' });
+    }
+
     const isMatch = await bcrypt.compare(password, user.password);
+
     if (!isMatch) {
       return res.status(400).json({ message: 'Invalid credentials' });
     }
 
-    // Create a JWT token
     const token = jwt.sign({ username: user.username }, 'your_secret_key', { expiresIn: '1h' });
 
     res.json({
@@ -90,8 +91,10 @@ router.post('/login', async (req, res) => {
       token: token,
     });
   } catch (error) {
+    console.error(error);
     res.status(500).json({ message: 'Login failed' });
   }
 });
+
 
 module.exports = router;
