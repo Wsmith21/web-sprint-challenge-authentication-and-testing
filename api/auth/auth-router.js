@@ -9,6 +9,7 @@ let userIdCounter = 1;
 const users = [];
 
 // Endpoint for user registration
+// Endpoint for user registration
 router.post('/register', async (req, res) => {
   const { username, password } = req.body;
 
@@ -29,17 +30,26 @@ router.post('/register', async (req, res) => {
     // Increment the user ID counter for the next user
     userIdCounter++;
 
-    // Push the new user to the users array (simulating database insertion)
-    users.push(newUser);
-
     // Return user details upon successful registration with ID, username, and hashed password
-    return res.status(200).json({
+    res.status(200).json({
       id: newUser.id,
       username: newUser.username,
       password: hashedPassword, // Include hashed password in the response
     });
+
+    // Check if the username already exists in the users array
+    const existingUser = users.find(user => user.username === username);
+
+    if (existingUser) {
+      // Remove the last added user if the username already exists
+      users.pop();
+      return res.status(400).json({ message: 'Username taken' });
+    }
+
+    // Push the new user to the users array (simulating database insertion)
+    users.push(newUser);
   } catch (error) {
-    return res.status(400).json({ message: 'Error creating user' });
+    return res.status(500).json({ message: 'Error creating user' });
   }
 });
 
