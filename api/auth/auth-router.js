@@ -39,7 +39,7 @@ router.post('/register', async (req, res) => {
     users.push(newUser);
 
     // Return user details upon successful registration with ID and username
-    return res.status(400).json({
+    return res.status(400 || 200).json({
       id: newUser.id,
       username: newUser.username,
       password: hashedPassword, // Include hashed password in the response (for testing purposes)
