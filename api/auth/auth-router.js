@@ -3,9 +3,7 @@ const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 
 const router = express.Router();
-
-// Placeholder for users (static array acting as persistent storage)
-const users = [];
+const userService = require('./userService.js'); // Import the userService module for database interactions
 
 // Endpoint for user registration
 router.post('/register', async (req, res) => {
@@ -16,27 +14,21 @@ router.post('/register', async (req, res) => {
   }
 
   try {
-    // Check if the username already exists in the users array
-    const existingUser = users.find(user => user.username === username);
+    // Check if the username already exists in the database
+    const existingUser = await userService.findByUsername(username);
 
     if (existingUser) {
       return res.status(400).json({ message: 'Username already exists' });
     }
 
-    // Hash the password before storing it (in a real app, store in a database hashed)
+    // Hash the password before storing it in the database
     const hashedPassword = await bcrypt.hash(password, 10);
 
-    // Create a new user object to save (in a real app, save to a database)
-    const newUser = {
-      username,
-      password: hashedPassword,
-    };
-
-    // Push the new user to the users array (in a real app, save to a database)
-    users.push(newUser);
+    // Create a new user in the database
+    const newUser = await userService.createUser(username, hashedPassword);
 
     // Return user details upon successful registration
-    return res.status(201).json({ id: users.length, username: newUser.username });
+    return res.status(201).json({ id: newUser.id, username: newUser.username });
   } catch (error) {
     return res.status(500).json({ message: 'Error creating user' });
   }
@@ -50,14 +42,14 @@ router.post('/login', async (req, res) => {
     return res.status(400).json({ message: 'Username and password required' });
   }
 
-  // Find user by username in the users array
-  const user = users.find(user => user.username === username);
-
-  if (!user) {
-    return res.status(400).json({ message: 'Invalid credentials' });
-  }
-
   try {
+    // Find user by username in the database
+    const user = await userService.findByUsername(username);
+
+    if (!user) {
+      return res.status(400).json({ message: 'Invalid credentials' });
+    }
+
     // Compare provided password with user's hashed password
     const isMatch = await bcrypt.compare(password, user.password);
 
