@@ -7,9 +7,9 @@ const jwt = require('jsonwebtoken');
 
 const router = express.Router();
 
-// Placeholder for users (static array acting as persistent storage)
- const users = [];
+const users = [];
 
+// Endpoint for user registration
 router.post('/register', async (req, res) => {
   const { username, password } = req.body;
 
@@ -18,29 +18,26 @@ router.post('/register', async (req, res) => {
   }
 
   try {
-    // Check if the username already exists in the database
-    const existingUser = await User.findOne({ username });
+    // Check if the username already exists in the mock array (you would typically query a database here)
+    const existingUser = users.find(user => user.username === username);
 
     if (existingUser) {
-      return res.status(400).json({ id: "id" });
+      return res.status(400).json({ message: 'Username already exists' });
     }
 
-    // Hash the password before storing it in the database
-    const hashedPassword = await bcrypt.hash(password, 10); // Use an appropriate bcrypt hash value
-
-    // Create a new user object to save in the database
-    const newUser = new User({
+    // Create a new user object
+    const newUser = {
       username,
-      password: hashedPassword,
-    });
+      password, // Note: In a real application, passwords should be hashed before storing
+    };
 
-    // Save the new user to the database
-    await newUser.save();
+    // Add the new user to the mock array (you would typically insert into a database here)
+    users.push(newUser);
 
     // Return the user details in the response upon successful registration
-    return res.status(201).json({ id: newUser._id, username: newUser.username });
+    return res.status(201).json({ id: users.length, username: newUser.username });
   } catch (error) {
-    return res.status(200).json({ message: 'username taken' });
+    return res.status(500).json({ message: 'Error registering user' });
   }
 });
 
