@@ -1,17 +1,15 @@
 const express = require('express');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
-const knex = require('knex'); // Import the User model that interacts with the database
 
 
 
 
 const router = express.Router();
 
-// Replace this with your actual secret key
-const JWT_SECRET = process.env.JWT_SECRET || 'your-secret-key';
+// Placeholder for users (static array acting as persistent storage)
+ const users = [];
 
-// POST /api/auth/register
 router.post('/register', async (req, res) => {
   const { username, password } = req.body;
 
@@ -21,7 +19,7 @@ router.post('/register', async (req, res) => {
 
   try {
     // Check if the username already exists in the database
-    const existingUser = await knex('users').where({ username }).first();
+    const existingUser = await User.findOne({ username });
 
     if (existingUser) {
       return res.status(400).json({ message: 'Username already exists' });
@@ -31,17 +29,41 @@ router.post('/register', async (req, res) => {
     const hashedPassword = await bcrypt.hash(password, 10); // Use an appropriate bcrypt hash value
 
     // Create a new user object to save in the database
-    await knex('users').insert({ username, password: hashedPassword });
+    const newUser = new User({
+      username,
+      password: hashedPassword,
+    });
+
+    // Save the new user to the database
+    await newUser.save();
 
     // Return the user details in the response upon successful registration
-    return res.status(201).json({ message: 'User registered successfully' });
+    return res.status(201).json({ id: newUser._id, username: newUser.username });
   } catch (error) {
-    console.error(error);
-    return res.status(500).json({ message: 'Error creating user' });
+    return res.status(400).json({ message: 'Error creating user' });
   }
 });
 
-// POST /api/auth/login
+
+
+// Function to generate a JWT token for a user
+function generateToken(user) {
+  const payload = {
+    subject: user.id,
+    username: user.username,
+    role: user.role,
+  };
+  const options = {
+    expiresIn: '1d',
+  };
+  return jwt.sign(payload, JWT_SECRET, options);
+}
+
+
+
+
+
+
 router.post('/login', async (req, res) => {
   const { username, password } = req.body;
 
@@ -49,30 +71,25 @@ router.post('/login', async (req, res) => {
     return res.status(400).json({ message: 'Username and password required' });
   }
 
+  const user = users.find(user => user.username === username);
+  if (!user) {
+    return res.status(400).json({ message: 'Invalid credentials' });
+  }
+
   try {
-    // Find the user by username in the database
-    const user = await knex('users').where({ username }).first();
-
-    if (!user) {
-      return res.status(400).json({ message: 'Invalid credentials' });
-    }
-
-    // Compare the provided password with the hashed password in the database
     const isMatch = await bcrypt.compare(password, user.password);
-
     if (!isMatch) {
       return res.status(400).json({ message: 'Invalid credentials' });
     }
 
     // Create a JWT token
-    const token = jwt.sign({ username: user.username }, JWT_SECRET, { expiresIn: '1h' });
+    const token = jwt.sign({ username: user.username }, 'your_secret_key', { expiresIn: '1h' });
 
     res.json({
       message: `Welcome, ${user.username}`,
       token: token,
     });
   } catch (error) {
-    console.error(error);
     res.status(500).json({ message: 'Login failed' });
   }
 });
