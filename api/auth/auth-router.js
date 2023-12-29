@@ -1,10 +1,13 @@
 const express = require('express');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
-const userService = require('./userService'); // Import the userService module for database interactions
 
 const router = express.Router();
 
+// Placeholder for users (static array acting as persistent storage)
+const users = [];
+
+// Endpoint for user registration
 router.post('/register', async (req, res) => {
   const { username, password } = req.body;
 
@@ -13,27 +16,31 @@ router.post('/register', async (req, res) => {
   }
 
   try {
-    // Check if the username already exists in the database
-    const existingUser = await userService.findByUsername(username);
+    // Check if the username already exists in the users array
+    const existingUser = users.find(user => user.username === username);
 
     if (existingUser) {
       return res.status(400).json({ message: 'Username already exists' });
     }
 
-    // Hash the password before storing it in the database
+    // Hash the password before storing it (in a real app, store in a database hashed)
     const hashedPassword = await bcrypt.hash(password, 10);
 
-    // Create a new user in the database
-    const newUser = await userService.createUser(username, hashedPassword);
+    // Create a new user object to save (in a real app, save to a database)
+    const newUser = {
+      username,
+      password: hashedPassword,
+    };
+
+    // Push the new user to the users array (in a real app, save to a database)
+    users.push(newUser);
 
     // Return user details upon successful registration
-    return res.status(201).json({ id: newUser.id, username: newUser.username });
+    return res.status(201).json({ id: users.length, username: newUser.username });
   } catch (error) {
-    console.error(error);
     return res.status(500).json({ message: 'Error creating user' });
   }
 });
-
 
 // Endpoint for user login
 router.post('/login', async (req, res) => {
