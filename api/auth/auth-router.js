@@ -10,6 +10,7 @@ const users = [];
 
 // Endpoint for user registration
 // Endpoint for user registration
+// Endpoint for user registration
 router.post('/register', async (req, res) => {
   const { username, password } = req.body;
 
@@ -20,9 +21,16 @@ router.post('/register', async (req, res) => {
   try {
     const hashedPassword = await bcrypt.hash(password, 10);
 
+    // Check if the username already exists in the users array
+    const existingUser = users.find(user => user.username === username);
+
+    if (existingUser) {
+      return res.status(400).json({ message: 'Username taken' });
+    }
+
     // Create a new user object to save (in a real app, save to a database)
     const newUser = {
-      id: userIdCounter, // Assign a unique ID (consider using an appropriate method to generate unique IDs)
+      id: userIdCounter, // Assign a unique ID
       username,
       password: hashedPassword,
     };
@@ -30,20 +38,19 @@ router.post('/register', async (req, res) => {
     // Increment the user ID counter for the next user
     userIdCounter++;
 
-    // Here, you would typically interact with a database to add the user, but for simulation, let's assume a users array
-    users.push(newUser); // Simulating adding the user to a collection/table
+    // Push the new user to the users array (simulating database insertion)
+    users.push(newUser);
 
-    // Return user details upon successful registration with ID and username
+    // Return user details upon successful registration with ID, username, and hashed password
     return res.status(200).json({
       id: newUser.id,
       username: newUser.username,
-      password: hashedPassword, // Include hashed password in the response (for testing purposes)
+      password: hashedPassword, // Include hashed password in the response
     });
   } catch (error) {
     return res.status(500).json({ message: 'Error creating user' });
   }
 });
-
 
 
 
