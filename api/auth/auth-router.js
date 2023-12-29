@@ -20,7 +20,7 @@ router.post('/register', async (req, res) => {
     const existingUser = users.find(user => user.username === username);
 
     if (existingUser) {
-      return res.status(400).json({ message: 'Username already exists' });
+      return res.status(400).json({ message: 'username taken' });
     }
 
     // Hash the password before storing it (in a real app, store in a database hashed)
@@ -47,7 +47,7 @@ router.post('/login', async (req, res) => {
   const { username, password } = req.body;
 
   if (!username || !password) {
-    return res.status(400).json({ message: 'username taken' });
+    return res.status(400).json({ message: 'username already exist' });
   }
 
   // Find user by username in the users array
