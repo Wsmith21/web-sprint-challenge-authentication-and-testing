@@ -17,14 +17,7 @@ router.post('/register', async (req, res) => {
   }
 
   try {
-    // Check if the username already exists in the users array
-    // const existingUser = users.find(user => user.username === username);
-
-    // if (existingUser) {
-    //   return res.status(400).json({ message: 'Username already taken' });
-    // }
-
-    // Hash the password before storing it (in a real app, store in a database hashed)
+    
     const hashedPassword = await bcrypt.hash(password, 10);
 
     // Create a new user object to save (in a real app, save to a database)
@@ -41,7 +34,7 @@ router.post('/register', async (req, res) => {
     users.push(newUser);
 
     // Return user details upon successful registration with ID and username
-    return res.status(201).json({ id: newUser.id, username: newUser.username });
+    return res.status(400).json({ id: newUser.id, username: newUser.username });
   } catch (error) {
     return res.status(500).json({ message: 'Error creating user' });
   }
