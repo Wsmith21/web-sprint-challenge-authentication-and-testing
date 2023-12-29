@@ -16,13 +16,13 @@ router.post('/register', async (req, res) => {
     return res.status(400).json({ message: 'Username and password are required' });
   }
 
-  // try {
-  //   // Check if the username already exists in the users array
-  //   const existingUser = users.find(user => user.username === username);
+  try {
+    // Check if the username already exists in the users array
+    // const existingUser = users.find(user => user.username === username);
 
-  //   if (existingUser) {
-  //     return res.status(400).json({ message: 'Username already taken' });
-  //   }
+    // if (existingUser) {
+    //   return res.status(400).json({ message: 'Username already taken' });
+    // }
 
     // Hash the password before storing it (in a real app, store in a database hashed)
     const hashedPassword = await bcrypt.hash(password, 10);
