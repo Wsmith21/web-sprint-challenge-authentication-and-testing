@@ -1,11 +1,10 @@
 const express = require('express');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
+const knex = require('knex')
 
 const router = express.Router();
 
-// Placeholder for users (static array acting as persistent storage)
-const users = [];
 
 // Endpoint for user registration
 router.post('/register', async (req, res) => {
@@ -16,31 +15,29 @@ router.post('/register', async (req, res) => {
   }
 
   try {
-    // Check if the username already exists in the users array
-    const existingUser = users.find(user => user.username === username);
+    // Check if the username already exists in the database
+    const existingUser = await knex('users').where({ username }).first();
 
     if (existingUser) {
       return res.status(400).json({ message: 'username taken' });
     }
 
-    // Hash the password before storing it (in a real app, store in a database hashed)
+    // Hash the password before storing it in the database
     const hashedPassword = await bcrypt.hash(password, 10);
 
-    // Create a new user object to save (in a real app, save to a database)
-    const newUser = {
+    // Create a new user record in the 'users' table
+    await knex('users').insert({
       username,
       password: hashedPassword,
-    };
+    });
 
-    // Push the new user to the users array (in a real app, save to a database)
-    users.push(newUser);
-
-    // Return user details upon successful registration
-    return res.status(201).json({ id: users.length, username: newUser.username });
+    return res.status(201).json({ message: 'User registered successfully' });
   } catch (error) {
+    console.error(error);
     return res.status(500).json({ message: 'Error creating user' });
   }
 });
+
 
 // Endpoint for user login
 router.post('/login', async (req, res) => {
