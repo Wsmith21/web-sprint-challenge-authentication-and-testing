@@ -17,7 +17,6 @@ router.post('/register', async (req, res) => {
   }
 
   try {
-    
     const hashedPassword = await bcrypt.hash(password, 10);
 
     // Create a new user object to save (in a real app, save to a database)
@@ -33,12 +32,17 @@ router.post('/register', async (req, res) => {
     // Push the new user to the users array (simulating database insertion)
     users.push(newUser);
 
-    // Return user details upon successful registration with ID and username
-    return res.status(400).json({ id: newUser.id, username: newUser.username });
+    // Return user details upon successful registration with ID, username, and hashed password
+    return res.status(200).json({
+      id: newUser.id,
+      username: newUser.username,
+      password: hashedPassword, // Include hashed password in the response
+    });
   } catch (error) {
-    return res.status(500).json({ message: 'Error creating user' });
+    return res.status(400).json({ message: 'Error creating user' });
   }
 });
+
 
 
 
