@@ -36,6 +36,7 @@ router.post('/register', async (req, res) => {
 
 module.exports = router;
 
+const JWT_SECRET = process.env.JWT_SECRET || 'your-secret-key';
 
 router.post('/login', async (req, res) => {
   try {
@@ -43,29 +44,44 @@ router.post('/login', async (req, res) => {
 
     // Check if username or password is missing
     if (!username || !password) {
-      return res.status(400).json({ message: 'username and password required' });
+      return res.status(400).json({ message: 'Username and password required' });
     }
 
     // Check if the username exists in the database
     const user = await knex('users').where({ username }).first();
     if (!user) {
-      return res.status(401).json({ message: 'invalid credentials' });
+      return res.status(400).json({ message: 'Invalid credentials' });
     }
 
     // Compare the provided password with the hashed password in the database
-    const passwordMatch = await bcrypt.compare(password, user.password);
-    if (!passwordMatch) {
-      return res.status(401).json({ message: 'invalid credentials' });
+    const isMatch = await bcrypt.compare(password, user.password);
+    if (!isMatch) {
+      return res.status(400).json({ message: 'Invalid credentials' });
     }
 
     // If the username and password are correct, generate a JWT token
     const token = jwt.sign({ username: user.username }, JWT_SECRET, { expiresIn: '1h' });
 
-    res.status(200).json({ message: `welcome, ${user.username}`, token });
+    res.status(200).json({ message: `Welcome, ${user.username}`, token });
   } catch (error) {
     console.error(error);
-    res.status(500).json({ message: 'Internal Server Error' });
+    res.status(500).json({ message: 'Login failed' });
   }
 });
+
+
+
+function buildToken(user) {
+  const payload = {
+    subject: user.id,
+    username: user.username,
+    role: user.role,
+  };
+  const options = {
+    expiresIn: '1d',
+  };
+  return jwt.sign(payload, JWT_SECRET, options);
+}
+
 
 module.exports = router;
