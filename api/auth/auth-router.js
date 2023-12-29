@@ -1,11 +1,10 @@
 const express = require('express');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
+const userService = require('./userService'); // Import the userService module for database interactions
 
 const router = express.Router();
-const userService = require('./userService.js'); // Import the userService module for database interactions
 
-// Endpoint for user registration
 router.post('/register', async (req, res) => {
   const { username, password } = req.body;
 
@@ -30,9 +29,11 @@ router.post('/register', async (req, res) => {
     // Return user details upon successful registration
     return res.status(201).json({ id: newUser.id, username: newUser.username });
   } catch (error) {
+    console.error(error);
     return res.status(500).json({ message: 'Error creating user' });
   }
 });
+
 
 // Endpoint for user login
 router.post('/login', async (req, res) => {
@@ -42,14 +43,14 @@ router.post('/login', async (req, res) => {
     return res.status(400).json({ message: 'Username and password required' });
   }
 
+  // Find user by username in the users array
+  const user = users.find(user => user.username === username);
+
+  if (!user) {
+    return res.status(400).json({ message: 'Invalid credentials' });
+  }
+
   try {
-    // Find user by username in the database
-    const user = await userService.findByUsername(username);
-
-    if (!user) {
-      return res.status(400).json({ message: 'Invalid credentials' });
-    }
-
     // Compare provided password with user's hashed password
     const isMatch = await bcrypt.compare(password, user.password);
 
