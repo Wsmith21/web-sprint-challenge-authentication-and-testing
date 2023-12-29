@@ -4,7 +4,8 @@ const jwt = require('jsonwebtoken');
 
 const router = express.Router();
 
-// Placeholder for users (static array acting as persistent storage)
+// Initialize a counter for assigning user IDs
+let userIdCounter = 1;
 const users = [];
 
 // Endpoint for user registration
@@ -20,7 +21,7 @@ router.post('/register', async (req, res) => {
     const existingUser = users.find(user => user.username === username);
 
     if (existingUser) {
-      return res.status(400).json({ message: 'username taken' });
+      return res.status(400).json({ message: 'Username already taken' });
     }
 
     // Hash the password before storing it (in a real app, store in a database hashed)
@@ -28,17 +29,19 @@ router.post('/register', async (req, res) => {
 
     // Create a new user object to save (in a real app, save to a database)
     const newUser = {
+      id: userIdCounter, // Assign a unique ID
       username,
       password: hashedPassword,
     };
 
-    // Push the new user to the users array (in a real app, save to a database)
+    // Increment the user ID counter for the next user
+    userIdCounter++;
+
+    // Push the new user to the users array (simulating database insertion)
     users.push(newUser);
 
-    const userId = users.length - 1;
-
     // Return user details upon successful registration with ID and username
-    return res.status(201).json({ id: userId, username: newUser.username });
+    return res.status(201).json({ id: newUser.id, username: newUser.username });
   } catch (error) {
     return res.status(500).json({ message: 'Error creating user' });
   }
