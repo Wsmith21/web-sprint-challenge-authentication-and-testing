@@ -4,12 +4,9 @@ const jwt = require('jsonwebtoken');
 
 const router = express.Router();
 
-const knex = require('knex')({
-  client: 'sqlite3', // Replace this with your actual database client (MySQL, PostgreSQL, etc.)
-  connection: {
-    filename: 'data', // Replace this with your database connection details
-  },
-});
+// Initialize a counter for assigning user IDs
+let userIdCounter = 1;
+const users = [];
 
 // Endpoint for user registration
 router.post('/register', async (req, res) => {
@@ -20,29 +17,35 @@ router.post('/register', async (req, res) => {
   }
 
   try {
-    // Check if the username already exists in the users table
-    const existingUser = await knex('users').where({ username }).first();
+    // Check if the username already exists in the users array
+    const existingUser = users.find(user => user.username === username);
 
     if (existingUser) {
       return res.status(400).json({ message: 'Username already taken' });
     }
 
-    // Hash the password before storing it
+    // Hash the password before storing it (in a real app, store in a database hashed)
     const hashedPassword = await bcrypt.hash(password, 10);
 
-    // Insert the new user into the users table
-    const [newUserId] = await knex('users').insert({
+    // Create a new user object to save (in a real app, save to a database)
+    const newUser = {
+      id: userIdCounter, // Assign a unique ID
       username,
       password: hashedPassword,
-    });
+    };
 
-    // Return user details upon successful registration
-    return res.status(201).json({ id: newUserId, username });
+    // Increment the user ID counter for the next user
+    userIdCounter++;
+
+    // Push the new user to the users array (simulating database insertion)
+    users.push(newUser);
+
+    // Return user details upon successful registration with ID and username
+    return res.status(201).json({ id: newUser.id, username: newUser.username });
   } catch (error) {
     return res.status(500).json({ message: 'Error creating user' });
   }
 });
-
 
 
 
