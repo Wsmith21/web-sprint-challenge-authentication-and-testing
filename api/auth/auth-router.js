@@ -52,23 +52,22 @@ router.post('/register', async (req, res) => {
 
 
 
-// Endpoint for user login
 router.post('/login', async (req, res) => {
   const { username, password } = req.body;
 
   if (!username || !password) {
-    return res.status(400).json({ message: 'username and password required' });
-  }
-
-  // Find user by username in the users array
-  const user = users.find(user => user.username === username);
-
-  if (!user) {
-    return res.status(400).json({ message: 'Invalid credentials' });
+    return res.status(400).json({ message: 'Username and password required' });
   }
 
   try {
-    // Compare provided password with user's hashed password
+    // Fetch user by username from the database
+    const user = await knex('users').where({ username }).first();
+
+    if (!user) {
+      return res.status(400).json({ message: 'Invalid credentials' });
+    }
+
+    // Compare provided password with the user's hashed password
     const isMatch = await bcrypt.compare(password, user.password);
 
     if (!isMatch) {
@@ -76,16 +75,18 @@ router.post('/login', async (req, res) => {
     }
 
     // Create a JWT token
-    const token = jwt.sign({ username: user.username }, 'your_secret_key', { expiresIn: '1h' });
+    const token = jwt.sign({ username: user.username, userId: user.id }, process.env.JWT_SECRET || 'your_secret_key', { expiresIn: '1h' });
 
     // Respond with welcome message and token upon successful login
-    res.json({
+    return res.json({
       message: `Welcome, ${user.username}`,
       token: token,
     });
   } catch (error) {
-    res.status(500).json({ message: 'Login failed' });
+    console.error(error);
+    return res.status(500).json({ message: 'Login failed' });
   }
 });
+
 
 module.exports = router;
