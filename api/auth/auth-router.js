@@ -3,13 +3,13 @@ const jwt = require('jsonwebtoken');
 const express = require('express');
 const router = express.Router();
 const knex = require('knex')
-const knexfile = require('./web-sprint-challenge-authentication-and-testing/knexfile.js');
+const knexConfig = require('../knexfile.js');
 
 
 
 
 const environment = process.env.NODE_ENV || 'development';
-const config = knexfile[environment];
+const config = knexConfig[environment];
 
 // Initialize Knex with the configuration
 const db = knex(config);
