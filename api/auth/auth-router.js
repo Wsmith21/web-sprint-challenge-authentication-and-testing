@@ -3,18 +3,11 @@ const jwt = require('jsonwebtoken');
 const express = require('express');
 const router = express.Router();
 const knex = require('knex');
-const knexConfig = require('../knexfile.js');
+const db = require ('data/dbConfig.js')
 
 
-
-
-const environment = process.env.NODE_ENV || 'development';
-const config = knexConfig[environment];
 
 // Initialize Knex with the configuration
-const db = knex(config);
-
-
 router.post('/register', async (req, res) => {
   const { username, password } = req.body;
 
@@ -23,8 +16,9 @@ router.post('/register', async (req, res) => {
   }
 
   try {
-    // Check if the username already exists in the database
-    const existingUser = await knex('users').where({ username }).first();
+    // Check if the username already exists in the database using Knex instance (db)
+    const existingUser = await db('users').where({ username }).first();
+
     if (existingUser) {
       return res.status(400).json({ message: 'Username already exists' });
     }
@@ -32,8 +26,8 @@ router.post('/register', async (req, res) => {
     // Hash the password using bcryptjs
     const hashedPassword = await bcrypt.hash(password, 10);
 
-    // Insert the new user into the 'users' table
-    await knex('users').insert({
+    // Insert the new user into the 'users' table using Knex instance (db)
+    await db('users').insert({
       username,
       password: hashedPassword,
     });
