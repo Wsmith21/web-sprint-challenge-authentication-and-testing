@@ -1,14 +1,12 @@
 const express = require('express');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
+const db = require('data/dbConfig.js')
 
 
 const router = express.Router();
 
 // Initialize a counter for assigning user IDs
-let userIdCounter = 1;
-const users = [];
-
 router.post('/register', async (req, res) => {
   const { username, password } = req.body;
 
@@ -17,30 +15,29 @@ router.post('/register', async (req, res) => {
   }
 
   try {
+    const existingUser = await db('users').where({ username }).first();
 
-    const hashedPassword = bcrypt.hashSync(password, 8);
+    if (existingUser) {
+      return res.status(400).json({ message: 'Username already exists' });
+    }
 
-    // Create a new user object
-    const newUser = {
-      id: userIdCounter, // Assign a unique ID (you might use a better way to generate IDs in a real app)
+    const hashedPassword = await bcrypt.hash(password, 10);
+
+    const [newUserId] = await db('users').insert({
       username,
       password: hashedPassword,
-    };
-
-    // Increment the user ID counter for the next user
-    userIdCounter++;
-
-    // Simulate adding the user to a database (users array)
-    users.push(newUser);
-
-    // Return user details upon successful registration with ID and username
-    return res.status(400 || 200).json({
-      id: newUser.id,
-      username: newUser.username,
-      password: hashedPassword, // Include hashed password in the response (for testing purposes)
     });
+
+    const newUser = await db('users').where('id', newUserId).first();
+
+    if (!newUser) {
+      return res.status(500).json({ message: 'Error creating user' });
+    }
+
+    // Successfully created user, send response
+    return res.status(201).json({ message: 'User registered successfully', newUser });
   } catch (error) {
-    return res.status(200).json({ message: 'Error creating user' });
+    return res.status(500).json({ message: 'Error creating user', error: error.message });
   }
 });
 
